@@ -8,3 +8,4 @@ result-*
 __pycache__/
 *.pyc
 .libspec/cache/
+build/
