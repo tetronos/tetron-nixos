@@ -1,0 +1,10 @@
+DO-NOT-COMMIT/
+result
+result-*
+.direnv/
+*.iso
+*.qcow2
+*.img
+__pycache__/
+*.pyc
+.libspec/cache/
