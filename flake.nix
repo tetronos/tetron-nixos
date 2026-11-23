@@ -1,0 +1,60 @@
+{
+  description = "tetronixos: the NixOS flavour of TetronOS (spike 0)";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    tetron-src = { url = "github:tetronos/tetron/v0.15.5"; flake = false; };
+    tetron-wm-src = { url = "github:tetronos/tetron-wm/v0.15.21"; flake = false; };
+    # Same kmscon as the Debian TetronOS (10.0.4); nixpkgs 26.05 ships 9.3.5,
+    # which the touchpad patch does not fit (src/config.c and friends differ).
+    kmscon-src = { url = "github:kmscon/kmscon/v10.0.4"; flake = false; };
+    # kmscon 10.0.4 needs libtsm >= 4.8.0 (its wrap file pins v4.8.0); nixpkgs has 4.5.0.
+    libtsm-src = { url = "github:kmscon/libtsm/v4.8.0"; flake = false; };
+    # The tetron-catalog git crate include_str!s ../../../assets/catalog.json, a file
+    # outside the crate, so cargo vendoring drops it. Pinned to the rev in the
+    # tetron-wm v0.15.21 Cargo.lock; must move with it.
+    tetron-appstore-src = { url = "github:tetronos/tetron-appstore/c7cee998afd6cedf521e928bb6bb19e1dade0640"; flake = false; };
+  };
+
+  outputs = { self, nixpkgs, tetron-src, tetron-wm-src, tetron-appstore-src, kmscon-src, libtsm-src }:
+    let
+      system = "x86_64-linux";
+      overlay = final: prev: {
+        tetron = final.callPackage ./pkgs/tetron.nix { src = tetron-src; version = "0.15.5"; };
+        tetron-wm = final.callPackage ./pkgs/tetron-wm.nix { src = tetron-wm-src; version = "0.15.21"; catalogSrc = tetron-appstore-src; };
+        libtsm = prev.libtsm.overrideAttrs { version = "4.8.0"; src = libtsm-src; };
+        libxkbcommon-console = final.callPackage ./pkgs/libxkbcommon-console.nix { };
+        # Console-only dbus, cairo and pango for kmscon: no Xlib, XCB, Xft, Xrender,
+        # no X11 autolaunch. Scoped to kmscon; the system dbus is handled by the no-GUI check.
+        dbus-console = prev.dbus.override { x11Support = false; };
+        cairo-console = prev.cairo.override { x11Support = false; xcbSupport = false; };
+        pango-console = prev.pango.override { x11Support = false; cairo = final.cairo-console; };
+        kmscon = final.callPackage ./pkgs/kmscon.nix { inherit (prev) kmscon; src = kmscon-src; };
+      };
+      pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
+      modules = [ { nixpkgs.overlays = [ overlay ]; } ./modules/tetron.nix ./modules/console.nix ];
+    in {
+      overlays.default = overlay;
+      nixosModules = { tetron = ./modules/tetron.nix; console = ./modules/console.nix; };
+
+      packages.${system} = {
+        inherit (pkgs) tetron tetron-wm kmscon;
+        iso = self.nixosConfigurations.iso.config.system.build.isoImage;
+        iso-baseline = self.nixosConfigurations.iso-baseline.config.system.build.isoImage;
+        default = self.packages.${system}.iso;
+      };
+
+      nixosConfigurations = {
+        iso = nixpkgs.lib.nixosSystem { inherit system; modules = modules ++ [ ./hosts/iso.nix ]; };
+        # Baseline for the size comparison: the stock minimal installer, unchanged.
+        iso-baseline = nixpkgs.lib.nixosSystem {
+          inherit system;
+          modules = [ "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
+        };
+      };
+
+      checks.${system} = {
+        mesh = import ./tests/mesh.nix { inherit pkgs modules; };
+      };
+    };
+}
