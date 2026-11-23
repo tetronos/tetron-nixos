@@ -1,0 +1,117 @@
+{
+  "nodes": {
+    "kmscon-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790376440,
+        "narHash": "sha256-F4XI924K4YxREEjqP0XLeFcvaW/9v5Iyuy9n75c9Osc=",
+        "owner": "kmscon",
+        "repo": "kmscon",
+        "rev": "68fc8e1b2601e816e3a4ef95e3d8e700677509b9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kmscon",
+        "ref": "v10.0.4",
+        "repo": "kmscon",
+        "type": "github"
+      }
+    },
+    "libtsm-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790341688,
+        "narHash": "sha256-CA80Tsc6rr2NCOVnH6+vGB2fuO6jZpuoCaiz4MuJ9xM=",
+        "owner": "kmscon",
+        "repo": "libtsm",
+        "rev": "ef2365d0f9f1a370d721a82470d69c3646fe97f0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kmscon",
+        "ref": "v4.8.0",
+        "repo": "libtsm",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1795370043,
+        "narHash": "sha256-s/0jq8usZtLVOolYBwmyUmd3JsfAu7w3FU+a0dgMqSY=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "0dc498bfe49baeb18b0f9891e800b53bb2603193",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-26.05",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "kmscon-src": "kmscon-src",
+        "libtsm-src": "libtsm-src",
+        "nixpkgs": "nixpkgs",
+        "tetron-appstore-src": "tetron-appstore-src",
+        "tetron-src": "tetron-src",
+        "tetron-wm-src": "tetron-wm-src"
+      }
+    },
+    "tetron-appstore-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795047053,
+        "narHash": "sha256-m5OuuZRpAyG9VbRxSkViuKNvVyGT/YszrssL01NCYhM=",
+        "owner": "tetronos",
+        "repo": "tetron-appstore",
+        "rev": "c7cee998afd6cedf521e928bb6bb19e1dade0640",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tetronos",
+        "repo": "tetron-appstore",
+        "rev": "c7cee998afd6cedf521e928bb6bb19e1dade0640",
+        "type": "github"
+      }
+    },
+    "tetron-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795150933,
+        "narHash": "sha256-Nht3P80OhYa1a8XxKmHveQOq2+JQ3dFt1NKuWc+AfVY=",
+        "owner": "tetronos",
+        "repo": "tetron",
+        "rev": "778ad67693e30cb6e43a9f2744bbb31133857bc6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tetronos",
+        "ref": "v0.15.5",
+        "repo": "tetron",
+        "type": "github"
+      }
+    },
+    "tetron-wm-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795339399,
+        "narHash": "sha256-L2kp2U0yInG2m1+CogqmiDXcn46tfjv3efnyba3jBMg=",
+        "owner": "tetronos",
+        "repo": "tetron-wm",
+        "rev": "cf7c8186a82498d3160f316f22777990107746d0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tetronos",
+        "ref": "v0.15.21",
+        "repo": "tetron-wm",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

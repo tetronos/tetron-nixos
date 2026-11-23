@@ -12,6 +12,6 @@ start) [ ! -f "$V/qemu.pid" ] || ! kill -0 "$(cat $V/qemu.pid)" 2>/dev/null || {
 stop) $SSH sudo poweroff 2>/dev/null || true ;;
 status) [ -f "$V/qemu.pid" ] && kill -0 "$(cat $V/qemu.pid)" 2>/dev/null && echo "up pid $(cat $V/qemu.pid)" || echo down ;;
 ssh) shift; $SSH "$@" ;;
-sync) rsync -a --delete -e "ssh -i $V/id_ed25519 -p $PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR" --exclude build --exclude DO-NOT-COMMIT --exclude .git "$ROOT/" dev@127.0.0.1:tetron-nixos/ ;;
+sync) rsync -a --delete -e "ssh -i $V/id_ed25519 -p $PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR" --exclude build --exclude DO-NOT-COMMIT --exclude .git --exclude logs --exclude "result*" "$ROOT/" dev@127.0.0.1:tetron-nixos/ ;;
 *) echo "usage: vm.sh start|stop|status|ssh [cmd]|sync"; exit 2 ;;
 esac
