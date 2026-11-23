@@ -1,5 +1,6 @@
 # tetron-nixos
 
-NixOS flavour of TetronOS (console-native, kmscon + tetron-wm + tetron mesh). Planning stage, no code yet.
+NixOS flavour of [TetronOS](https://github.com/tetronos/tetron-os): kmscon console, tetron-wm, tetron mesh. Everything is declarative, built from one flake. Status: planning, no code yet.
 
-Plan: [docs/PLAN_TetronOS_nixos_port_feasibility_research_and_staged_approach.md](docs/PLAN_TetronOS_nixos_port_feasibility_research_and_staged_approach.md)
+- Spec (libspec): `spec/`. Spec first, code second.
+- Planning docs live in `DO-NOT-COMMIT/` (not published).
