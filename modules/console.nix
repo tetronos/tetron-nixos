@@ -26,7 +26,10 @@ in {
     '';
   };
   console.packages = [ pkgs.terminus_font ];
-  environment.systemPackages = [ pkgs.tetron-wm tetron-session ];
+  # Terminus in the system profile too: tetron-wm reads console fonts from
+  # XDG_DATA_DIRS (/run/current-system/sw/share/consolefonts) for screenshots.
+  environment.systemPackages = [ pkgs.tetron-wm tetron-session pkgs.terminus_font ];
+  environment.pathsToLink = [ "/share/consolefonts" ];
 
   # Start the desktop on a kmscon (or tty1) login only.
   environment.loginShellInit = ''
