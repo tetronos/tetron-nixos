@@ -23,7 +23,7 @@ sleep 6
 on "$tree" > "$out/after.txt"; shot after
 cat "$out/before.txt"; echo ---; cat "$out/after.txt"
 if on 'pgrep -f "[t]etron-wm-wrapped" >/dev/null'; then echo "A5 fallback: FAIL (tetron-wm running again)"; exit 1; fi
-if on 'for p in $(pgrep -x bash); do t=$(ps -o tty= -p $p); case $t in pts/*) pp=$(ps -o ppid= -p $p); while [ "${pp:-1}" -gt 1 ]; do [ "$(cat /proc/$pp/comm)" = kmscon ] && exit 0; pp=$(ps -o ppid= -p $pp); done;; esac; done; exit 1'; then
+if on 'for p in $(pgrep -x bash); do t=$(ps -o tty= -p $p); case $t in pts/*) pp=$(ps -o ppid= -p $p | tr -d " "); while [ "${pp:-1}" -gt 1 ]; do [ "$(cat /proc/$pp/comm)" = kmscon ] && exit 0; pp=$(ps -o ppid= -p $pp | tr -d " "); done;; esac; done; exit 1'; then
 	echo "A5 fallback: PASS (a shell under kmscon, no tetron-wm)"
 else
 	echo "A5 fallback: FAIL (no shell under kmscon)"; exit 1
