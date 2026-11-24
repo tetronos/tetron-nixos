@@ -6,13 +6,16 @@
   isoImage.makeEfiBootable = true;
   isoImage.makeUsbBootable = true;
   isoImage.squashfsCompression = "zstd -Xcompression-level 19";
-  image.baseName = lib.mkForce "tetronixos-spike0";
+  image.baseName = lib.mkForce "tetron-nixos-spike0";
 
-  networking.hostName = "tetronixos";
-  networking.networkmanager.enable = false;
+  networking.hostName = "tetron-nixos";
   services.openssh.enable = true;
 
-  users.users.tetronos = { isNormalUser = true; extraGroups = [ "wheel" "tetron" "video" "input" ]; initialPassword = "tetronos"; };
+  # Spike only: Intel wifi for the ThinkPad P1. The policy (module default) is
+  # the full Debian tetronos-firmware-wifi set.
+  tetron-nixos.firmware.wifi = [ "iwlwifi-*" "intel/iwlwifi" ];
+
+  users.users.tetronos = { isNormalUser = true; extraGroups = [ "wheel" "tetron" "video" "input" "networkmanager" ]; initialPassword = "tetronos"; };
   security.sudo.wheelNeedsPassword = false;
   services.getty.autologinUser = "tetronos";
 

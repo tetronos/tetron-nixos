@@ -2,9 +2,9 @@
 # GLU, GL in the closure; software renderer only) and touchpad tap-to-click.
 # nixpkgs' sandbox.patch is written for 9.3.5; the same change (systemd units
 # into the store, not /etc) is made here against the 10.0.4 meson.build.
-{ lib, kmscon, libtsm, libxkbcommon-console, pango-console, dbus-console, seatd, src }:
+{ lib, kmscon, libtsm, libxkbcommon-console, dbus, seatd, src }:
 
-(kmscon.override { inherit libtsm; libxkbcommon = libxkbcommon-console; pango = pango-console; }).overrideAttrs (o: {
+(kmscon.override { inherit libtsm; libxkbcommon = libxkbcommon-console; }).overrideAttrs (o: {
   version = "10.0.4";
   inherit src;
   patches = [ ./patches/kmscon-touchpad-tap.patch ];
@@ -16,7 +16,7 @@
     (p: !(builtins.elem (lib.getName p) [ "libGLU" "libGL" "glu" "libglvnd" "libgbm" "mesa-libgbm" ]))
     o.buildInputs
     # 10.x adds dbus and libseat (both on in the Debian build, --auto-features=enabled).
-    ++ [ dbus-console seatd ];
+    ++ [ dbus seatd ];
   # nixpkgs' postFixup edits bin/kmscon as a shell script (9.x); in 10.x it is
   # the ELF binary. kmscon-launch-gui only exists to start graphical programs
   # from the console: a GUI component, so it is removed, not patched.
