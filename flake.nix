@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     tetron-src = { url = "github:tetronos/tetron/v0.15.6"; flake = false; };
-    tetron-wm-src = { url = "github:tetronos/tetron-wm/v0.15.22"; flake = false; };
+    tetron-wm-src = { url = "github:tetronos/tetron-wm/v0.15.23"; flake = false; };
     # Same kmscon as the Debian TetronOS (10.0.4); nixpkgs 26.05 ships 9.3.5,
     # which the touchpad patch does not fit (src/config.c and friends differ).
     kmscon-src = { url = "github:kmscon/kmscon/v10.0.4"; flake = false; };
@@ -27,7 +27,7 @@
       system = "x86_64-linux";
       overlay = final: prev: {
         tetron = final.callPackage ./pkgs/tetron.nix { src = tetron-src; version = "0.15.6"; };
-        tetron-wm = final.callPackage ./pkgs/tetron-wm.nix { src = tetron-wm-src; version = "0.15.22"; catalogSrc = tetron-appstore-src; };
+        tetron-wm = final.callPackage ./pkgs/tetron-wm.nix { src = tetron-wm-src; version = "0.15.23"; catalogSrc = tetron-appstore-src; };
         tetron-tui = final.callPackage ./pkgs/tetron-tui.nix { src = tetron-tui-src; version = "0.15.3"; };
         tetronos-ssh-temp = final.callPackage ./pkgs/tetronos-ssh-temp.nix { src = tetron-os-src; };
         pipewire = final.callPackage ./pkgs/pipewire-console.nix { inherit (prev) pipewire; };
