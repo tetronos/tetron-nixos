@@ -37,7 +37,8 @@ in {
     security.pam.services.sshd.unixAuth = lib.mkForce true;
     systemd.services.sshd.wantedBy = lib.mkIf (!cfg.sshAtBoot) (lib.mkForce [ ]);
     systemd.tmpfiles.settings."10-ssh-temp"."/etc/ssh/sshd_config.d".d = { mode = "0755"; };
-    environment.systemPackages = [ pkgs.tetronos-ssh-temp ];
+    # git: the host config (/etc/tetronos-config) is a git repository.
+    environment.systemPackages = [ pkgs.tetronos-ssh-temp pkgs.git ];
     systemd.services.tetronos-ssh-temp-cleanup = {
       description = "TetronOS: end a temporary ssh login left over from before this boot";
       unitConfig.ConditionPathExists = "/var/lib/tetronos/ssh-temp/state";

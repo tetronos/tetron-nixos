@@ -1,0 +1,7 @@
+{
+  "disk": "/dev/disk/by-id/virtio-tetron-smoke",
+  "hostname": "tetron-smoke",
+  "user": { "name": "tetronos", "hashedPassword": "$6$Di69W/Qk7klBE0rr$8QRP2.EKaxWzS0a7JGDvZbWMp6wADg/ZlFUvXZeIo4qjwj2Fjpk553pPKEAh8PSg7LKxMlszE2bKCTmSt8eqK." },
+  "ssh_at_boot": true,
+  "wifi_firmware": []
+}
