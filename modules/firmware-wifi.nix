@@ -35,7 +35,24 @@ in
     ];
   };
 
+  # USER 2026-11-24: mobile broadband (ModemManager, libqmi, 67 MiB) is an
+  # option, off by default; a laptop with a WWAN card or a USB modem turns it on.
+  options.tetron-nixos.modem.enable = lib.mkOption {
+    type = lib.types.bool;
+    default = false;
+    description = "ModemManager for 4G/5G cards and USB modems.";
+  };
+
   config = {
+    networking.modemmanager.enable = config.tetron-nixos.modem.enable;
+    # The NetworkManager package links ModemManager for its WWAN plugin
+    # whatever the service setting; without the modem option it is built
+    # without it (-Dmodem_manager=false), so libqmi and friends stay out.
+    networking.networkmanager.package = lib.mkIf (!config.tetron-nixos.modem.enable)
+      (pkgs.networkmanager.overrideAttrs (old: {
+        mesonFlags = map (f: if f == "-Dmodem_manager=true" then "-Dmodem_manager=false" else f) old.mesonFlags;
+        buildInputs = lib.filter (p: lib.getName p != "modemmanager") old.buildInputs;
+      }));
     # An empty list (a VM, a wired box) ships no wifi firmware at all.
     hardware.firmware = lib.optional (cfg != [ ]) wifiFirmware;
     hardware.wirelessRegulatoryDatabase = true;
