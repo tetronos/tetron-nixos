@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="images/icon.svg">
+<script>try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<title>tetron-nixos install guide: parts, modules, ISO and installer</title>
+<meta name="description" content="How to install the tetron suite with Nix on any Linux, enable its modules on NixOS, use the binary cache, build the live ISO and install it to disk.">
+<style>
+  :root { --bg:#0e1116; --surface:#161b22; --surface-2:#1e252e; --fg:#e6eaf0; --muted:#98a3b1; --border:#2a323d;
+    --accent:#7ee0b0; --accent-2:#8fb8dc; --warn:#e0a96b; --bad:#e07b7b;
+    --code:#0b0e13; --nav-bg:rgba(14,17,22,.88); --us-bg:rgba(126,224,176,.07); --on-accent:#04130c; --shadow:rgba(0,0,0,.35); --shadow-lg:rgba(0,0,0,.5);
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace; --sans:system-ui,-apple-system,"Segoe UI",sans-serif; color-scheme:dark; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --bg:#f6f8fa; --surface:#ffffff; --surface-2:#eaeef3; --fg:#1b222c; --muted:#556170; --border:#d5dce5;
+    --accent:#14744c; --accent-2:#2a5f8f; --warn:#955510; --bad:#b83a3a;
+    --code:#ffffff; --nav-bg:rgba(246,248,250,.9); --us-bg:rgba(20,116,76,.08); --on-accent:#ffffff; --shadow:rgba(30,45,70,.14); --shadow-lg:rgba(30,45,70,.2); color-scheme:light; } }
+  :root[data-theme="light"] { --bg:#f6f8fa; --surface:#ffffff; --surface-2:#eaeef3; --fg:#1b222c; --muted:#556170; --border:#d5dce5;
+    --accent:#14744c; --accent-2:#2a5f8f; --warn:#955510; --bad:#b83a3a;
+    --code:#ffffff; --nav-bg:rgba(246,248,250,.9); --us-bg:rgba(20,116,76,.08); --on-accent:#ffffff; --shadow:rgba(30,45,70,.14); --shadow-lg:rgba(30,45,70,.2); color-scheme:light; }
+  .tbtn { background:none; color:var(--muted); border:1px solid var(--border); border-radius:6px; padding:3px 10px; font:.75rem var(--mono); }
+  .tbtn:hover { color:var(--fg); border-color:var(--accent); }
+  :focus-visible { outline:2px solid var(--accent-2); outline-offset:2px; }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.65 var(--sans); -webkit-font-smoothing:antialiased; }
+  a { color:var(--accent-2); }
+  .wrap { max-width:62rem; margin:0 auto; padding:0 20px; }
+  nav { position:sticky; top:0; z-index:10; background:var(--nav-bg); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  nav .wrap { display:flex; gap:18px; align-items:center; height:48px; font-family:var(--mono); font-size:.85rem; }
+  nav .brand { color:var(--accent); font-weight:700; margin-right:auto; text-decoration:none; }
+  nav .crumb { display:flex; align-items:center; gap:6px; margin-right:auto; } nav .crumb .brand { margin-right:0; } nav .crumb .sep { color:var(--muted); }
+  nav a { color:var(--muted); text-decoration:none; } nav a:hover { color:var(--fg); }
+  nav .links { display:contents; }
+  h1 { font-size:clamp(2.2rem,7vw,4rem); line-height:1.05; letter-spacing:-.03em; margin:0 0 1rem; text-wrap:balance; }
+  h1 em { font-style:normal; color:var(--accent); }
+  h2 { font-size:clamp(1.5rem,4vw,2.1rem); letter-spacing:-.02em; margin:0 0 .5rem; text-wrap:balance; }
+  .eyebrow { font:.75rem var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin:0 0 1rem; }
+  .lede { font-size:1.2rem; color:var(--muted); max-width:40rem; margin:0 0 1.6rem; text-wrap:pretty; }
+  section { padding:4.5rem 0; border-top:1px solid var(--border); }
+  .hero { padding:4rem 0 3rem; border:0; }
+  .inst { font-size:clamp(1.5rem,4vw,2.2rem); font-weight:700; letter-spacing:.22em; text-align:center; margin:2.4rem 0 .9rem; color:var(--accent); }
+  .inst-sub { text-align:center; color:var(--muted); font-size:1.05rem; margin:-.5rem 0 1rem; }
+  .inspect { font:.8rem var(--mono); color:var(--muted); text-align:center; margin:.7rem auto 0; max-width:46rem; }
+  .inspect a { white-space:nowrap; }
+  .hero .install { margin-left:auto; margin-right:auto; }
+  .hero .pills { justify-content:center; }
+  .hero .sub { text-align:center; margin-left:auto; margin-right:auto; max-width:46rem; }
+  .hero .apk { justify-content:center; text-align:center; }
+  .hero .apk span { flex:0 1 auto; }
+  .install { display:flex; align-items:center; gap:10px; background:var(--code); border:1px solid var(--border); border-radius:10px; padding:12px 14px; font:.88rem var(--mono); max-width:46rem; }
+  .install code { flex:1; overflow-x:auto; white-space:nowrap; color:var(--fg); }
+  .install .p { color:var(--accent); }
+  button { font:inherit; cursor:pointer; }
+  .copy { background:var(--surface-2); color:var(--fg); border:1px solid var(--border); border-radius:6px; padding:5px 12px; font:.8rem var(--mono); }
+  .copy:hover { border-color:var(--accent); }
+  .sub { color:var(--muted); font-size:.88rem; margin:.7rem 0 0; }
+  .shot { margin-top:2.5rem; border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:0 30px 80px var(--shadow-lg); }
+  .shot img { display:block; width:100%; height:auto; }
+  .pills { display:flex; flex-wrap:wrap; gap:8px; margin-top:1.6rem; }
+  .pill { font:.78rem var(--mono); color:var(--muted); border:1px solid var(--border); border-radius:99px; padding:3px 12px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(15rem,1fr)); gap:14px; margin-top:2rem; }
+  .win { background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .win .bar { display:flex; align-items:center; gap:6px; padding:7px 12px; background:var(--surface-2); border-bottom:1px solid var(--border); font:.75rem var(--mono); color:var(--muted); }
+  .win .bar i { width:9px; height:9px; border-radius:50%; background:var(--border); } .win .bar i:first-child { background:var(--bad); }
+  .win .body { padding:14px 16px; } .win p { margin:0; color:var(--muted); font-size:.93rem; } .win h3 { margin:0 0 .3rem; font-size:1.05rem; }
+  .cmp { width:100%; border-collapse:collapse; margin-top:2rem; font-size:.93rem; }
+  .cmp th, .cmp td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:top; }
+  .cmp th { font:.75rem var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .cmp td:first-child { color:var(--muted); } .cmp .us { background:var(--us-bg); color:var(--fg); }
+  .cmp th.us { color:var(--accent); }
+  .tablewrap { overflow-x:auto; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:2rem; }
+  .two pre { margin:0; padding:14px 16px; background:var(--code); border:1px solid var(--border); border-radius:10px; font:.82rem/1.5 var(--mono); overflow-x:auto; color:var(--muted); }
+  .two h3 { margin:0 0 .5rem; font:.78rem var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .two .good h3 { color:var(--accent); }
+  .demo { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); gap:40px; margin-top:2.5rem; align-items:start; }
+  .steps .step { min-height:60vh; display:flex; flex-direction:column; justify-content:center; opacity:.35; transition:opacity .3s; }
+  .steps .step.on { opacity:1; }
+  .step .n { font:.8rem var(--mono); color:var(--accent); }
+  .step h3 { font-size:1.5rem; margin:.2rem 0 .4rem; } .step p { color:var(--muted); margin:0; }
+  .step kbd { font:.8rem var(--mono); background:var(--surface-2); border:1px solid var(--border); border-radius:4px; padding:1px 6px; color:var(--fg); }
+  .stage { position:sticky; top:72px; }
+  .stage .frame { position:relative; border:1px solid var(--border); border-radius:12px; overflow:hidden; aspect-ratio:var(--ar,16/10); background:var(--code); box-shadow:0 20px 60px var(--shadow); }
+  .stage img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .45s; }
+  .stage img.on { opacity:1; }
+  .cap { font:.8rem var(--mono); color:var(--muted); margin-top:.6rem; text-align:center; }
+  .themes { display:grid; grid-template-columns:repeat(auto-fit,minmax(13rem,1fr)); gap:12px; margin-top:2rem; }
+  .themes figure { margin:0; } .themes img { width:100%; display:block; border:1px solid var(--border); border-radius:8px; }
+  .themes figcaption { font:.78rem var(--mono); color:var(--muted); margin-top:.4rem; }
+  .vpn { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:40px; align-items:center; margin-top:2rem; }
+  .vpn ul { margin:0; padding:0; list-style:none; display:grid; gap:12px; }
+  .vpn li { color:var(--muted); padding-left:1.2rem; position:relative; } .vpn li b { color:var(--fg); font-weight:600; }
+  .vpn li::before { content:"\25CF"; position:absolute; left:0; color:var(--accent); font-size:.7rem; top:.35rem; }
+  .tray { background:var(--code); border:1px solid var(--border); border-radius:10px; font:.85rem/1.7 var(--mono); overflow:hidden; max-width:24rem; }
+  .tray .top { display:flex; gap:16px; padding:6px 14px; background:var(--surface-2); border-bottom:1px solid var(--border); color:var(--muted); } .tray .top .on { color:var(--accent); }
+  .tray .row { display:flex; justify-content:space-between; gap:12px; padding:2px 14px; } .tray .row span:last-child { color:var(--muted); }
+  .tray .hr { border-top:1px solid var(--border); margin:6px 0; } .tray .dir { color:var(--accent); } .tray .rel { color:var(--warn); }
+  .tray .pad { padding:8px 0; }
+  .tray .note { color:var(--muted); font-size:.72rem; padding:0 14px 8px; }
+  .btn { display:inline-block; margin-top:1.6rem; padding:10px 18px; border-radius:8px; background:var(--accent); color:var(--on-accent); font-weight:600; text-decoration:none; }
+  .btn.ghost { background:none; color:var(--fg); border:1px solid var(--border); margin-left:8px; }
+  footer { border-top:1px solid var(--border); padding:2.5rem 0 3rem; color:var(--muted); font-size:.88rem; }
+  footer a { margin-right:16px; display:inline-block; white-space:nowrap; }
+  @media (max-width:760px) {
+    .two, .demo, .vpn { grid-template-columns:1fr; }
+    .stage { position:sticky; top:48px; z-index:2; background:var(--bg); padding:8px 0; }
+    .steps .step { min-height:45vh; }
+    nav .links { display:none; }
+  }
+  @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } .stage img, .steps .step { transition:none; } }
+  .install.multi { display:block; } .install.multi code { display:block; white-space:pre-wrap; overflow-wrap:anywhere; } .install.multi .copy { margin-top:10px; }
+  .grid.four { grid-template-columns:repeat(auto-fit,minmax(13rem,1fr)); }
+  .limits li { color:var(--muted); margin:.35rem 0; } .limits li b { color:var(--fg); }
+  .warnbox { border:1px solid var(--warn); border-radius:10px; padding:12px 16px; margin-top:1.6rem; color:var(--fg); background:var(--surface); }
+  .warnbox b { color:var(--warn); }
+  .files { width:100%; border-collapse:collapse; margin-top:1.4rem; font-size:.9rem; }
+  .files td { padding:8px 10px; border-bottom:1px solid var(--border); vertical-align:top; } .files td:first-child { color:var(--muted); white-space:nowrap; }
+  .files code, .win code, .limits code, p code { font:.85em var(--mono); }
+  .shot figcaption { font:.8rem var(--mono); color:var(--muted); padding:.5rem .8rem; border-top:1px solid var(--border); background:var(--surface); }
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <span class="crumb"><a class="org" href="https://tetronos.github.io/">tetronos</a><span class="sep">/</span><a class="brand" href="./">tetron-nixos</a></span>
+  <span class="links"><a href="./#iso">iso</a><a href="./#parts">parts</a><a href="./#flavors">flavors</a><a href="install.html">install guide</a><a href="https://tetronos.github.io/tetron-os/">Debian flavor</a></span>
+  <button class="tbtn" id="theme" type="button" aria-label="Switch between light and dark theme">light</button>
+<a href="https://github.com/tetronos/tetron-nixos">github</a>
+</div></nav>
+<header class="hero" id="top"><div class="wrap">
+  <p class="eyebrow">Install guide</p>
+  <h1>tetron-nixos, step by step.</h1>
+  <p class="lede">Pick the row that fits: one part on any Linux with Nix, some parts on your NixOS, the whole system as an ISO, or the ISO installed to disk. You need <a href="https://nixos.org/download/">Nix</a> with flakes enabled (<code>experimental-features = nix-command flakes</code>), which NixOS and the Determinate installer set up for you.</p>
+  <div class="pills"><span class="pill"><a href="#any">1. any Linux</a></span><span class="pill"><a href="#nixos">2. NixOS modules</a></span><span class="pill"><a href="#cache">3. binary cache</a></span><span class="pill"><a href="#iso">4. live ISO</a></span><span class="pill"><a href="#disk">5. install to disk</a></span></div>
+</div></header>
+
+<section id="any"><div class="wrap">
+  <p class="eyebrow">1</p>
+  <h2>Any Linux with Nix.</h2>
+  <p class="lede">x86_64 and aarch64. Packages: <code>tetron</code>, <code>tetron-tui</code>, <code>tetron-wm</code>, <code>casttui</code>, <code>kmscon</code>. macOS: use the release binaries of each project.</p>
+  <pre>nix run github:tetronos/tetron-nixos#casttui          # try it, nothing installed
+nix profile install github:tetronos/tetron-nixos#tetron-tui
+nix profile upgrade tetron-tui                        # later</pre>
+  <p class="sub">The tetron daemon needs a system service. On NixOS use the module below. Elsewhere run <code>sudo $(command -v tetron) install</code>; the unit points at your profile link (<code>~/.nix-profile/bin/tetron</code>), so it survives <code>nix profile upgrade</code>. Needs tetron v0.15.7 or later.</p>
+</div></section>
+
+<section id="nixos"><div class="wrap">
+  <p class="eyebrow">2</p>
+  <h2>NixOS: enable only what you want.</h2>
+  <p class="lede">Add the flake as an input and the modules you want. Nothing else on the machine changes.</p>
+  <pre>{
+  inputs.tetron-nixos.url = "github:tetronos/tetron-nixos";
+  outputs = { nixpkgs, tetron-nixos, ... }: {
+    nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        ./configuration.nix
+        tetron-nixos.nixosModules.tetron
+        tetron-nixos.nixosModules.tetron-tui
+        {
+          services.tetron = { enable = true; operator = "alice"; };
+          programs.tetron-tui.enable = true;
+        }
+      ];
+    };
+  };
+}</pre>
+  <pre>sudo nixos-rebuild switch --flake .#myhost
+tetron --help</pre>
+  <ul class="limits">
+    <li><b><code>services.tetron</code></b> runs the mesh daemon; <code>operator</code> is the user who manages it without sudo.</li>
+    <li><b><code>programs.tetron-wm</code></b> installs the desktop; <code>desktop.enable</code> adds its fonts and tools.</li>
+    <li><b><code>services.tetron-console</code></b> replaces the login on the virtual consoles with kmscon and tetron-wm on tty1. Use it on a machine without a display manager.</li>
+    <li><b><code>programs.casttui</code></b> installs casttui; <code>openFirewall</code> opens the ports Chromecast needs (45000 to 47000).</li>
+    <li><b><code>tetron-nixos.nixosModules.default</code></b> is the whole TetronOS system: all parts plus the no-GUI console base, sound, wifi firmware and branding. It is what the live ISO and the installer set up.</li>
+  </ul>
+</div></section>
+
+<section id="cache"><div class="wrap">
+  <p class="eyebrow">3</p>
+  <h2>Binary cache.</h2>
+  <p class="lede">The suite packages are built and signed in <a href="https://github.com/tetronos/tetron-nixos-cache">tetron-nixos-cache</a>. Without it Nix compiles them, which takes a while. Add it to <code>/etc/nix/nix.conf</code> and restart nix-daemon, or to <code>nix.settings</code> on NixOS:</p>
+  <pre>extra-substituters = https://github.com/tetronos/tetron-nixos-cache/releases/download/cache
+extra-trusted-public-keys = tetron-nixos-cache-1:VZnNn/Hb0ytcL354uHPmQeZA0CZheIIHUgjBVrghLUI=</pre>
+  <p class="sub">On NixOS: <code>nix.settings.extra-substituters = [ "..." ]; nix.settings.extra-trusted-public-keys = [ "..." ];</code> with the same two values.</p>
+</div></section>
+
+<section id="iso"><div class="wrap">
+  <p class="eyebrow">4</p>
+  <h2>The live ISO.</h2>
+  <p class="lede">Build it on any machine with Nix (x86_64 Linux), then write it to a USB stick or boot it in a VM. It runs from RAM; nothing on the machine changes until you install.</p>
+  <pre>nix build github:tetronos/tetron-nixos#iso
+sha256sum result/iso/*.iso</pre>
+  <div class="two">
+    <div><h3>Write it to USB</h3><pre>lsblk        # find the stick, e.g. /dev/sdX
+sudo dd if=result/iso/tetronos-nixos-*.iso \
+  of=/dev/sdX bs=4M status=progress conv=fsync</pre></div>
+    <div><h3>Or try it in a VM</h3><pre>qemu-system-x86_64 -enable-kvm -m 4G -smp 2 \
+  -cdrom result/iso/tetronos-nixos-*.iso</pre></div>
+  </div>
+  <p class="sub">Everything on the USB stick is erased. Ventoy works too. BIOS and UEFI. Log in as <code>tetronos</code>, password <code>tetronos</code>; tetron-wm starts on tty1.</p>
+</div></section>
+
+<section id="disk"><div class="wrap">
+  <p class="eyebrow">5</p>
+  <h2>Install to disk.</h2>
+  <p class="lede">From the live system, <code>tetron-nixos-install</code> reads one <code>install.json</code>, writes a host flake, partitions the disk with disko and runs <code>nixos-install</code>. It refuses the disk the live system runs from. Name the disk by id so you hit the right one: <code>ls -l /dev/disk/by-id</code>.</p>
+  <pre>{
+  "disk": "/dev/disk/by-id/nvme-EXAMPLE_MODEL_SERIAL",
+  "hostname": "mybox",
+  "user": { "name": "alice", "hashedPassword": "..." },
+  "ssh_at_boot": false,
+  "wifi_firmware": []
+}</pre>
+  <pre>mkpasswd -m sha-512          # paste the output as hashedPassword
+sudo tetron-nixos-install install.json</pre>
+  <p class="sub"><b>Everything on the target disk is erased.</b> The host flake stays on the machine in <code>/etc/tetronos-config</code>: change it, then <code>sudo nixos-rebuild switch --flake /etc/tetronos-config#mybox</code>. A terminal UI for the installer is planned.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>More.</h2>
+  <p class="lede">The Debian flavor has its own ISO and apt repository. The suite parts have their own pages.</p>
+  <a class="btn" href="./">tetron-nixos</a><a class="btn ghost" href="https://tetronos.github.io/tetron-os/">TetronOS (Debian)</a><a class="btn ghost" href="https://tetronos.github.io/tetron-wm/">tetron-wm</a><a class="btn ghost" href="https://tetronos.github.io/tetron/">tetron</a>
+</div></section>
+
+<footer><div class="wrap">
+  <a href="https://github.com/tetronos/tetron-nixos">GitHub</a><a href="install.html">Install guide</a><a href="https://github.com/tetronos/tetron-nixos-cache">Binary cache</a><a href="https://tetronos.github.io/tetron-os/">TetronOS (Debian)</a><a href="https://tetronos.github.io/tetron-wm/">tetron-wm</a><a href="https://tetronos.github.io/tetron/">tetron</a><a href="https://tetronos.github.io/">tetronos</a>
+  <p>Built on <a href="https://nixos.org/">NixOS</a>. NixOS is a trademark of the NixOS Foundation; TetronOS is not affiliated with or endorsed by the NixOS project.</p>
+</div></footer>
+
+<script>
+(function () {
+  var tb = document.getElementById('theme'), root = document.documentElement, mq = window.matchMedia && matchMedia('(prefers-color-scheme: light)');
+  function eff() { var t = root.getAttribute('data-theme'); return t || (mq && mq.matches ? 'light' : 'dark'); }
+  function label() { tb.textContent = eff() === 'dark' ? 'light' : 'dark'; }
+  label();
+  tb.addEventListener('click', function () {
+    var n = eff() === 'dark' ? 'light' : 'dark'; root.setAttribute('data-theme', n);
+    try { localStorage.setItem('theme', n); } catch (e) {}
+    label();
+  });
+  if (mq && mq.addEventListener) mq.addEventListener('change', label);
+  var cmd = document.getElementById('cmd'), b = document.getElementById('copy');
+  if (b && cmd) b.addEventListener('click', function () {
+    var t = cmd.textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { b.textContent = 'copied'; }, function () {
+      var r = document.createRange(); r.selectNodeContents(cmd); var s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'select, ctrl+c';
+    });
+    setTimeout(function () { b.textContent = 'copy'; }, 2000);
+  });
+})();
+</script>
+</body>
+</html>
