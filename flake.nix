@@ -46,7 +46,12 @@
         tetron-boot-theme = args: final.callPackage ./pkgs/tetron-boot-theme.nix ({
           stock = nixpkgs.legacyPackages.${system};
           src = tetron-os-src;
-          built = let d = self.lastModifiedDate or "19700101"; in "${builtins.substring 0 4 d}-${builtins.substring 4 2 d}-${builtins.substring 6 2 d}";
+          # "built DATE" from this flake's own date; a copy without one (the
+          # installed host's path input) shows the pinned nixpkgs date instead.
+          built = let
+            day = d: "${builtins.substring 0 4 d}-${builtins.substring 4 2 d}-${builtins.substring 6 2 d}";
+            own = self.lastModified or 0;
+          in if own > 0 then "built ${day self.lastModifiedDate}" else "nixpkgs ${day nixpkgs.lastModifiedDate}";
         } // args);
         tetron-nixos-install = final.writeShellApplication {
           name = "tetron-nixos-install";
