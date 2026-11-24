@@ -55,7 +55,10 @@
         } // args);
         tetron-nixos-install = final.writeShellApplication {
           name = "tetron-nixos-install";
-          runtimeInputs = with final; [ jq git util-linux coreutils nixos-install-tools disko.packages.${system}.disko ];
+          # disko from nixpkgs (same 1.13.0 as the input): it shares this
+          # nixpkgs source and systemd; the flake's package embedded a second
+          # copy of each (197 MiB and 179 MiB). The input gives the module only.
+          runtimeInputs = with final; [ jq git util-linux coreutils nixos-install-tools final.disko ];
           text = builtins.readFile ./pkgs/tetron-nixos-install.sh;
         };
       };
