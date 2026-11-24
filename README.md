@@ -24,7 +24,7 @@ nix profile install github:tetronos/tetron-nixos#tetron-tui
 nix run github:tetronos/tetron-nixos#casttui        # try without installing
 ```
 
-The tetron daemon needs a system service: on NixOS use the module below; elsewhere `sudo $(command -v tetron) install`. Known issue in tetron v0.15.6: that unit names the Nix store path, which an upgrade and garbage collection remove; run the command again after `nix profile upgrade` until the fix is released.
+The tetron daemon needs a system service: on NixOS use the module below; elsewhere `sudo $(command -v tetron) install`. From tetron v0.15.7 the unit names your profile link (`~/.nix-profile/bin/tetron`), so it survives `nix profile upgrade`.
 
 ### NixOS
 

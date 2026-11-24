@@ -139,16 +139,16 @@
     "tetron-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1795474033,
-        "narHash": "sha256-eTjvd8N5AZAHdxRO0OWypUm+PaqL0Y7aUX0aoaTN6jg=",
+        "lastModified": 1795510796,
+        "narHash": "sha256-hibbxnZKbumsbVLLnTebsi1orciIj0BtnjpWdr/ErF4=",
         "owner": "tetronos",
         "repo": "tetron",
-        "rev": "adecd8a48497993724f2461f5d0b066e308a00c1",
+        "rev": "b1e3db909b8e67a1a6909e07a77561dd324dd3ff",
         "type": "github"
       },
       "original": {
         "owner": "tetronos",
-        "ref": "v0.15.6",
+        "ref": "v0.15.7",
         "repo": "tetron",
         "type": "github"
       }
