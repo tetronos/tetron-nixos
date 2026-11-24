@@ -1,10 +1,10 @@
 {
-  description = "tetronixos: the NixOS flavour of TetronOS (spike 0)";
+  description = "tetron-nixos: the NixOS flavour of TetronOS (spike 0)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
-    tetron-src = { url = "github:tetronos/tetron/v0.15.5"; flake = false; };
-    tetron-wm-src = { url = "github:tetronos/tetron-wm/v0.15.21"; flake = false; };
+    tetron-src = { url = "github:tetronos/tetron/v0.15.6"; flake = false; };
+    tetron-wm-src = { url = "github:tetronos/tetron-wm/v0.15.22"; flake = false; };
     # Same kmscon as the Debian TetronOS (10.0.4); nixpkgs 26.05 ships 9.3.5,
     # which the touchpad patch does not fit (src/config.c and friends differ).
     kmscon-src = { url = "github:kmscon/kmscon/v10.0.4"; flake = false; };
@@ -12,7 +12,7 @@
     libtsm-src = { url = "github:kmscon/libtsm/v4.8.0"; flake = false; };
     # The tetron-catalog git crate include_str!s ../../../assets/catalog.json, a file
     # outside the crate, so cargo vendoring drops it. Pinned to the rev in the
-    # tetron-wm v0.15.21 Cargo.lock; must move with it.
+    # tetron-wm v0.15.22 Cargo.lock; must move with it.
     tetron-appstore-src = { url = "github:tetronos/tetron-appstore/c7cee998afd6cedf521e928bb6bb19e1dade0640"; flake = false; };
   };
 
@@ -20,22 +20,23 @@
     let
       system = "x86_64-linux";
       overlay = final: prev: {
-        tetron = final.callPackage ./pkgs/tetron.nix { src = tetron-src; version = "0.15.5"; };
-        tetron-wm = final.callPackage ./pkgs/tetron-wm.nix { src = tetron-wm-src; version = "0.15.21"; catalogSrc = tetron-appstore-src; };
+        tetron = final.callPackage ./pkgs/tetron.nix { src = tetron-src; version = "0.15.6"; };
+        tetron-wm = final.callPackage ./pkgs/tetron-wm.nix { src = tetron-wm-src; version = "0.15.22"; catalogSrc = tetron-appstore-src; };
         libtsm = prev.libtsm.overrideAttrs { version = "4.8.0"; src = libtsm-src; };
         libxkbcommon-console = final.callPackage ./pkgs/libxkbcommon-console.nix { };
-        # Console-only dbus, cairo and pango for kmscon: no Xlib, XCB, Xft, Xrender,
-        # no X11 autolaunch. Scoped to kmscon; the system dbus is handled by the no-GUI check.
-        dbus-console = prev.dbus.override { x11Support = false; };
-        cairo-console = prev.cairo.override { x11Support = false; xcbSupport = false; };
-        pango-console = prev.pango.override { x11Support = false; cairo = final.cairo-console; };
+        # No GUI anywhere (modules/no-gui.nix enforces it): dbus without X11
+        # autolaunch, cairo and pango without Xlib, XCB, Xft, Xrender. System-wide,
+        # so kmscon, chafa (tetron-wm) and NixOS's own tools all get these.
+        dbus = prev.dbus.override { x11Support = false; };
+        cairo = prev.cairo.override { x11Support = false; xcbSupport = false; };
+        pango = prev.pango.override { x11Support = false; };
         kmscon = final.callPackage ./pkgs/kmscon.nix { inherit (prev) kmscon; src = kmscon-src; };
       };
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
-      modules = [ { nixpkgs.overlays = [ overlay ]; } ./modules/tetron.nix ./modules/console.nix ];
+      modules = [ { nixpkgs.overlays = [ overlay ]; } ./modules/tetron.nix ./modules/console.nix ./modules/no-gui.nix ./modules/firmware-wifi.nix ];
     in {
       overlays.default = overlay;
-      nixosModules = { tetron = ./modules/tetron.nix; console = ./modules/console.nix; };
+      nixosModules = { tetron = ./modules/tetron.nix; console = ./modules/console.nix; no-gui = ./modules/no-gui.nix; firmware-wifi = ./modules/firmware-wifi.nix; };
 
       packages.${system} = {
         inherit (pkgs) tetron tetron-wm kmscon;
