@@ -48,6 +48,7 @@
   users.users.tetronos = { isNormalUser = true; extraGroups = [ "wheel" "tetron" "video" "input" "networkmanager" ]; initialPassword = "tetronos"; };
   security.sudo.wheelNeedsPassword = false;
   services.getty.autologinUser = "tetronos";
+  tetron-nixos.tetron.operator = "tetronos";
 
   documentation.enable = false;
   documentation.man.enable = false;
