@@ -43,6 +43,7 @@ in {
     hashedPassword = user.hashedPassword;
   };
 
+  tetron-nixos.tetron.operator = user.name;
   tetron-nixos.sshAtBoot = sshAtBoot;
   services.openssh.settings.PasswordAuthentication = lib.mkIf sshAtBoot true;
   tetron-nixos.firmware.wifi = lib.mkIf (install ? wifi_firmware) install.wifi_firmware;

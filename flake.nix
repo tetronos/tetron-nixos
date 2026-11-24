@@ -55,7 +55,10 @@
         };
       };
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
-      modules = [ { nixpkgs.overlays = [ overlay ]; } ./modules/tetron.nix ./modules/console.nix ./modules/no-gui.nix ./modules/firmware-wifi.nix ./modules/base.nix ./modules/sound.nix ./modules/branding.nix ];
+      # sharedModules without the overlay, for nixosTests (their pkgs is fixed
+      # and already has the overlay); modules adds it for real systems.
+      modules = [ { nixpkgs.overlays = [ overlay ]; } ] ++ sharedModules;
+      sharedModules = [ ./modules/tetron.nix ./modules/console.nix ./modules/no-gui.nix ./modules/firmware-wifi.nix ./modules/base.nix ./modules/sound.nix ./modules/branding.nix ];
       # What an installed machine's host flake gets as its tetron-nixos copy.
       source = lib.fileset.toSource {
         root = ./.;
@@ -93,7 +96,7 @@
       };
 
       checks.${system} = {
-        mesh = import ./tests/mesh.nix { inherit pkgs modules; };
+        mesh = import ./tests/mesh.nix { inherit pkgs; modules = sharedModules; };
       };
     };
 }

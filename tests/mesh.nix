@@ -4,17 +4,29 @@
 # or the DHT, this hermetic run fails and the spike falls back to two VMs with
 # user networking (recorded in the results, not hidden).
 { pkgs, modules }:
+let
+  # No wifi in the test VMs; jq for the invite JSON.
+  # The test instrumentation adds xwininfo (libxcb) to every test VM; the
+  # no-GUI check stays on for the real images (ISO, installed hosts).
+  node = { lib, ... }: {
+    imports = modules;
+    environment.systemPackages = [ pkgs.jq ];
+    tetron-nixos.firmware.wifi = [ ];
+    system.forbiddenDependenciesRegexes = lib.mkForce [ ];
+  };
+in
 pkgs.testers.runNixOSTest {
   name = "tetron-mesh";
   nodes = {
-    a = { imports = modules; environment.systemPackages = [ pkgs.jq ]; };
-    b = { imports = modules; environment.systemPackages = [ pkgs.jq ]; };
+    a = node;
+    b = node;
   };
   testScript = ''
     start_all()
     for m in (a, b):
         m.wait_for_unit("tetron.service")
-        m.wait_until_succeeds("tetron status", timeout=60)
+        # tetron status exits 0 without a daemon too; daemon_version only comes from a live one.
+        m.wait_until_succeeds("tetron status --json | jq -e .daemon_version", timeout=60)
     a.succeed("tetron create --network-name spike --hostname a >&2")
     invite = a.succeed("tetron invite spike create --json | jq -r .invite_key").strip()
     assert invite, "no invite_key from tetron invite create"
