@@ -58,6 +58,19 @@ class A9InstallSmoke(Req):
     '''A9: disko plus nixos-install --flake from a hand-written install.json
     installs into a qcow2; the machine reboots, login works, the daemon is
     active.
+
+    Shape (plan section 12, spike subset, no TUI): `install.json` is the only
+    input (disk by-id path, hostname, user name and password hash, optional
+    ssh_at_boot and wifi_firmware). `tetron-nixos.lib.mkHost` turns it into a
+    nixosSystem: the same modules as the ISO, plus a disko layout (GPT, 1 GiB
+    ESP, ext4 root), systemd-boot, the user. The ISO carries
+    `tetron-nixos-install`, which writes the host flake to
+    `/etc/tetronos-config` (flake.nix, install.json,
+    hardware-configuration.nix, a copy of the tetron-nixos source as a
+    relative path input, git with one commit), runs disko from that flake
+    and `nixos-install --flake`. It refuses a disk that is not a block
+    device or that holds the running live medium. The host config is the
+    source of truth for later `nixos-rebuild switch --flake`.
     '''
 
 

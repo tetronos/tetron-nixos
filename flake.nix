@@ -17,10 +17,13 @@
     tetron-tui-src = { url = "github:tetronos/tetron-tui/v0.15.3"; flake = false; };
     # Debian TetronOS sources reused here (tetronos-ssh-temp). tetron-os main.
     tetron-os-src = { url = "github:tetronos/tetron-os/cc235c0ec16f76daa32a8b3308f8117159515a9d"; flake = false; };
+    # Partitioning for the installer (plan section 12).
+    disko = { url = "github:nix-community/disko/latest"; inputs.nixpkgs.follows = "nixpkgs"; };
   };
 
-  outputs = { self, nixpkgs, tetron-src, tetron-wm-src, tetron-appstore-src, tetron-tui-src, tetron-os-src, kmscon-src, libtsm-src }:
+  outputs = inputs@{ self, nixpkgs, disko, tetron-src, tetron-wm-src, tetron-appstore-src, tetron-tui-src, tetron-os-src, kmscon-src, libtsm-src }:
     let
+      lib = nixpkgs.lib;
       system = "x86_64-linux";
       overlay = final: prev: {
         tetron = final.callPackage ./pkgs/tetron.nix { src = tetron-src; version = "0.15.6"; };
@@ -39,22 +42,49 @@
         cairo = prev.cairo.override { x11Support = false; xcbSupport = false; };
         pango = prev.pango.override { x11Support = false; };
         kmscon = final.callPackage ./pkgs/kmscon.nix { inherit (prev) kmscon; src = kmscon-src; };
+        # Boot splash and theme (modules/branding.nix). Built date: this flake's commit.
+        tetron-boot-theme = args: final.callPackage ./pkgs/tetron-boot-theme.nix ({
+          stock = nixpkgs.legacyPackages.${system};
+          src = tetron-os-src;
+          built = let d = self.lastModifiedDate or "19700101"; in "${builtins.substring 0 4 d}-${builtins.substring 4 2 d}-${builtins.substring 6 2 d}";
+        } // args);
+        tetron-nixos-install = final.writeShellApplication {
+          name = "tetron-nixos-install";
+          runtimeInputs = with final; [ jq git util-linux coreutils nixos-install-tools disko.packages.${system}.disko ];
+          text = builtins.readFile ./pkgs/tetron-nixos-install.sh;
+        };
       };
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
-      modules = [ { nixpkgs.overlays = [ overlay ]; } ./modules/tetron.nix ./modules/console.nix ./modules/no-gui.nix ./modules/firmware-wifi.nix ./modules/base.nix ./modules/sound.nix ];
+      modules = [ { nixpkgs.overlays = [ overlay ]; } ./modules/tetron.nix ./modules/console.nix ./modules/no-gui.nix ./modules/firmware-wifi.nix ./modules/base.nix ./modules/sound.nix ./modules/branding.nix ];
+      # What an installed machine's host flake gets as its tetron-nixos copy.
+      source = lib.fileset.toSource {
+        root = ./.;
+        fileset = lib.fileset.unions [ ./flake.nix ./flake.lock ./lib ./modules ./pkgs ./hosts ./tests ];
+      };
+      # The live ISO carries the source and every flake input, so the installer
+      # evaluates the host flake without fetching sources.
+      installerModule = { pkgs, ... }: {
+        environment.etc."tetron-nixos/source".source = source;
+        environment.systemPackages = [ pkgs.tetron-nixos-install ];
+        system.extraDependencies = map (i: i.outPath) (lib.attrValues (removeAttrs inputs [ "self" ]));
+      };
     in {
       overlays.default = overlay;
-      nixosModules = { tetron = ./modules/tetron.nix; console = ./modules/console.nix; no-gui = ./modules/no-gui.nix; firmware-wifi = ./modules/firmware-wifi.nix; base = ./modules/base.nix; sound = ./modules/sound.nix; };
+      lib.mkHost = { install, hardware ? null }: nixpkgs.lib.nixosSystem {
+        inherit system;
+        modules = modules ++ [ disko.nixosModules.disko (import ./lib/host.nix install) ] ++ lib.optional (hardware != null) hardware;
+      };
+      nixosModules = { tetron = ./modules/tetron.nix; console = ./modules/console.nix; no-gui = ./modules/no-gui.nix; firmware-wifi = ./modules/firmware-wifi.nix; base = ./modules/base.nix; sound = ./modules/sound.nix; branding = ./modules/branding.nix; };
 
       packages.${system} = {
-        inherit (pkgs) tetron tetron-wm tetron-tui tetronos-ssh-temp kmscon;
+        inherit (pkgs) tetron tetron-wm tetron-tui tetronos-ssh-temp tetron-nixos-install kmscon;
         iso = self.nixosConfigurations.iso.config.system.build.isoImage;
         iso-baseline = self.nixosConfigurations.iso-baseline.config.system.build.isoImage;
         default = self.packages.${system}.iso;
       };
 
       nixosConfigurations = {
-        iso = nixpkgs.lib.nixosSystem { inherit system; modules = modules ++ [ ./hosts/iso.nix ]; };
+        iso = nixpkgs.lib.nixosSystem { inherit system; modules = modules ++ [ ./hosts/iso.nix installerModule ]; };
         # Baseline for the size comparison: the stock minimal installer, unchanged.
         iso-baseline = nixpkgs.lib.nixosSystem {
           inherit system;

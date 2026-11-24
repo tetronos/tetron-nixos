@@ -36,7 +36,8 @@ in
   };
 
   config = {
-    hardware.firmware = [ wifiFirmware ];
+    # An empty list (a VM, a wired box) ships no wifi firmware at all.
+    hardware.firmware = lib.optional (cfg != [ ]) wifiFirmware;
     hardware.wirelessRegulatoryDatabase = true;
     networking.networkmanager.enable = true;
     environment.systemPackages = [ pkgs.iw ];
