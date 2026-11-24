@@ -25,23 +25,36 @@
     let
       lib = nixpkgs.lib;
       system = "x86_64-linux";
-      overlay = final: prev: {
+      # The suite: our own packages only, on stock nixpkgs. Overrides no
+      # nixpkgs package, so a desktop NixOS or any distro with Nix can use it
+      # and every dependency comes from cache.nixos.org.
+      suite = final: prev: {
         tetron = final.callPackage ./pkgs/tetron.nix { src = tetron-src; version = "0.15.6"; };
         tetron-wm = final.callPackage ./pkgs/tetron-wm.nix { src = tetron-wm-src; version = "0.15.23"; catalogSrc = tetron-appstore-src; };
         tetron-tui = final.callPackage ./pkgs/tetron-tui.nix { src = tetron-tui-src; version = "0.15.3"; };
         tetronos-ssh-temp = final.callPackage ./pkgs/tetronos-ssh-temp.nix { src = tetron-os-src; };
+        libxkbcommon-console = final.callPackage ./pkgs/libxkbcommon-console.nix { };
+        # libtsm 4.8 for kmscon only: the system libtsm stays as it is.
+        kmscon = final.callPackage ./pkgs/kmscon.nix {
+          inherit (prev) kmscon;
+          src = kmscon-src;
+          libtsm = prev.libtsm.overrideAttrs { version = "4.8.0"; src = libtsm-src; };
+        };
+      };
+      # The TetronOS console system: no GUI anywhere (modules/no-gui.nix
+      # enforces it). System-wide rebuilds, so only the edition uses this.
+      console = final: prev: {
         pipewire = final.callPackage ./pkgs/pipewire-console.nix { inherit (prev) pipewire; };
         # alsa-utils bundles alsa-plugins, whose full ffmpeg pulls SDL, zenity and GTK.
         alsa-plugins = prev.alsa-plugins.override { ffmpeg = final.ffmpeg-headless; };
-        libtsm = prev.libtsm.overrideAttrs { version = "4.8.0"; src = libtsm-src; };
-        libxkbcommon-console = final.callPackage ./pkgs/libxkbcommon-console.nix { };
-        # No GUI anywhere (modules/no-gui.nix enforces it): dbus without X11
-        # autolaunch, cairo and pango without Xlib, XCB, Xft, Xrender. System-wide,
-        # so kmscon, chafa (tetron-wm) and NixOS's own tools all get these.
+        # dbus without X11 autolaunch, cairo and pango without Xlib, XCB, Xft,
+        # Xrender: kmscon, chafa (tetron-wm) and NixOS's own tools all get these.
         dbus = prev.dbus.override { x11Support = false; };
         cairo = prev.cairo.override { x11Support = false; xcbSupport = false; };
         pango = prev.pango.override { x11Support = false; };
-        kmscon = final.callPackage ./pkgs/kmscon.nix { inherit (prev) kmscon; src = kmscon-src; };
+      };
+      # Edition tools: boot theme and installer.
+      edition = final: prev: {
         # Boot splash and theme (modules/branding.nix). Built date: this flake's commit.
         tetron-boot-theme = args: final.callPackage ./pkgs/tetron-boot-theme.nix ({
           stock = nixpkgs.legacyPackages.${system};
@@ -62,6 +75,10 @@
           text = builtins.readFile ./pkgs/tetron-nixos-install.sh;
         };
       };
+      overlay = lib.composeManyExtensions [ suite console edition ];
+      # Linux platforms the suite packages are built for (no macOS: USER).
+      systems = [ "x86_64-linux" "aarch64-linux" ];
+      suitePkgs = sys: import nixpkgs { system = sys; overlays = [ suite ]; };
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
       # sharedModules without the overlay, for nixosTests (their pkgs is fixed
       # and already has the overlay); modules adds it for real systems.
@@ -80,19 +97,24 @@
         system.extraDependencies = map (i: i.outPath) (lib.attrValues (removeAttrs inputs [ "self" ]));
       };
     in {
-      overlays.default = overlay;
+      overlays = { default = overlay; inherit suite console edition; };
       lib.mkHost = { install, hardware ? null }: nixpkgs.lib.nixosSystem {
         inherit system;
         modules = modules ++ [ disko.nixosModules.disko (import ./lib/host.nix install) ] ++ lib.optional (hardware != null) hardware;
       };
       nixosModules = { tetron = ./modules/tetron.nix; console = ./modules/console.nix; no-gui = ./modules/no-gui.nix; firmware-wifi = ./modules/firmware-wifi.nix; base = ./modules/base.nix; sound = ./modules/sound.nix; branding = ./modules/branding.nix; };
 
-      packages.${system} = {
-        inherit (pkgs) tetron tetron-wm tetron-tui tetronos-ssh-temp tetron-nixos-install kmscon;
-        iso = self.nixosConfigurations.iso.config.system.build.isoImage;
-        iso-baseline = self.nixosConfigurations.iso-baseline.config.system.build.isoImage;
-        default = self.packages.${system}.iso;
-      };
+      # Suite packages on stock nixpkgs, for every Linux platform; the edition
+      # images on x86_64 only.
+      packages = lib.genAttrs systems (sys:
+        let p = suitePkgs sys; in {
+          inherit (p) tetron tetron-wm tetron-tui tetronos-ssh-temp kmscon;
+        } // lib.optionalAttrs (sys == system) {
+          inherit (pkgs) tetron-nixos-install;
+          iso = self.nixosConfigurations.iso.config.system.build.isoImage;
+          iso-baseline = self.nixosConfigurations.iso-baseline.config.system.build.isoImage;
+          default = self.packages.${system}.iso;
+        });
 
       nixosConfigurations = {
         iso = nixpkgs.lib.nixosSystem { inherit system; modules = modules ++ [ ./hosts/iso.nix installerModule ]; };
