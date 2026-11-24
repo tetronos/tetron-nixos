@@ -5,6 +5,10 @@
 rustPlatform.buildRustPackage {
   pname = "tetron";
   inherit version src;
+  # The label must match the source: a stale flake.lock once shipped v0.15.21 as 0.15.22.
+  postPatch = ''
+    grep -qx 'version = "${version}"' Cargo.toml || { echo "version label ${version} does not match Cargo.toml" >&2; exit 1; }
+  '';
   cargoLock.lockFile = "${src}/Cargo.lock";
   # Tests need TUN and network; the real check is the two-VM nixosTest.
   doCheck = false;

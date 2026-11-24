@@ -5,7 +5,7 @@ let
 in {
   boot.kernelModules = [ "tun" ];
   users.groups.tetron = { };
-  environment.systemPackages = [ pkgs.tetron ];
+  environment.systemPackages = [ pkgs.tetron pkgs.tetron-tui ];
   # The CLI must see the same paths as the daemon.
   environment.variables = env;
 
