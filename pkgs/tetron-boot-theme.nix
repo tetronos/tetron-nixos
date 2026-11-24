@@ -12,7 +12,7 @@ runCommand "tetron-boot-theme" {
   b=${src}/config/common/bootloaders
   mkdir -p $out
   sed -e 's|@TETRONOS_EDITION@ edition · based on Debian @VERSION@ (@DISTRIBUTION@) · @ARCHITECTURE@|${edition} edition · based on ${base} · ${arch}|' \
-      -e 's|built @YEAR@-@MONTH@-@DAY@ · linux @LINUX_VERSIONS@|built ${built} · linux ${kernel}|' \
+      -e 's|built @YEAR@-@MONTH@-@DAY@ · linux @LINUX_VERSIONS@|${built} · linux ${kernel}|' \
       $b/splash.svg > splash.svg
   if grep -q '@[A-Z_]*@' splash.svg; then echo "splash.svg: placeholder left" >&2; grep -o '@[A-Z_]*@' splash.svg >&2; exit 1; fi
   rsvg-convert -w 640 -h 480 -b '#080a09' -o $out/splash.png splash.svg
