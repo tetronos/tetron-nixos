@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "casttui-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794952051,
+        "narHash": "sha256-aT1XPaoQGSA26YxhByDX2Hr7dlomTQADF81IqM9BsJE=",
+        "owner": "tetronos",
+        "repo": "casttui",
+        "rev": "1b01b91ba1808a5ee9a3edf20540af0a33e7804c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tetronos",
+        "ref": "v0.15.1",
+        "repo": "casttui",
+        "type": "github"
+      }
+    },
     "disko": {
       "inputs": {
         "nixpkgs": [
@@ -73,6 +90,7 @@
     },
     "root": {
       "inputs": {
+        "casttui-src": "casttui-src",
         "disko": "disko",
         "kmscon-src": "kmscon-src",
         "libtsm-src": "libtsm-src",

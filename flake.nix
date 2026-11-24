@@ -15,13 +15,14 @@
     # tetron-wm v0.15.22 Cargo.lock; must move with it.
     tetron-appstore-src = { url = "github:tetronos/tetron-appstore/c7cee998afd6cedf521e928bb6bb19e1dade0640"; flake = false; };
     tetron-tui-src = { url = "github:tetronos/tetron-tui/v0.15.3"; flake = false; };
+    casttui-src = { url = "github:tetronos/casttui/v0.15.1"; flake = false; };
     # Debian TetronOS sources reused here (tetronos-ssh-temp). tetron-os main.
     tetron-os-src = { url = "github:tetronos/tetron-os/cc235c0ec16f76daa32a8b3308f8117159515a9d"; flake = false; };
     # Partitioning for the installer (plan section 12).
     disko = { url = "github:nix-community/disko/latest"; inputs.nixpkgs.follows = "nixpkgs"; };
   };
 
-  outputs = inputs@{ self, nixpkgs, disko, tetron-src, tetron-wm-src, tetron-appstore-src, tetron-tui-src, tetron-os-src, kmscon-src, libtsm-src }:
+  outputs = inputs@{ self, nixpkgs, disko, tetron-src, tetron-wm-src, tetron-appstore-src, tetron-tui-src, casttui-src, tetron-os-src, kmscon-src, libtsm-src }:
     let
       lib = nixpkgs.lib;
       system = "x86_64-linux";
@@ -32,10 +33,12 @@
         tetron = final.callPackage ./pkgs/tetron.nix { src = tetron-src; version = "0.15.6"; };
         tetron-wm = final.callPackage ./pkgs/tetron-wm.nix { src = tetron-wm-src; version = "0.15.23"; catalogSrc = tetron-appstore-src; };
         tetron-tui = final.callPackage ./pkgs/tetron-tui.nix { src = tetron-tui-src; version = "0.15.3"; };
+        casttui = final.callPackage ./pkgs/casttui.nix { src = casttui-src; version = "0.15.1"; };
         tetronos-ssh-temp = final.callPackage ./pkgs/tetronos-ssh-temp.nix { src = tetron-os-src; };
         libxkbcommon-console = final.callPackage ./pkgs/libxkbcommon-console.nix { };
-        # libtsm 4.8 for kmscon only: the system libtsm stays as it is.
-        kmscon = final.callPackage ./pkgs/kmscon.nix {
+        # kmscon 10.0.4 with the touchpad tap patch, under its own name so
+        # nixpkgs' kmscon stays; libtsm 4.8 is private to it.
+        kmscon-tetron = final.callPackage ./pkgs/kmscon.nix {
           inherit (prev) kmscon;
           src = kmscon-src;
           libtsm = prev.libtsm.overrideAttrs { version = "4.8.0"; src = libtsm-src; };
@@ -83,7 +86,15 @@
       # sharedModules without the overlay, for nixosTests (their pkgs is fixed
       # and already has the overlay); modules adds it for real systems.
       modules = [ { nixpkgs.overlays = [ overlay ]; } ] ++ sharedModules;
-      sharedModules = [ ./modules/tetron.nix ./modules/console.nix ./modules/no-gui.nix ./modules/firmware-wifi.nix ./modules/base.nix ./modules/sound.nix ./modules/branding.nix ];
+      # One module per suite component, each usable alone on any NixOS.
+      componentModules = {
+        tetron = import ./modules/tetron.nix self;
+        tetron-tui = import ./modules/tetron-tui.nix self;
+        tetron-wm = import ./modules/tetron-wm.nix self;
+        tetron-console = import ./modules/tetron-console.nix self;
+        casttui = import ./modules/casttui.nix self;
+      };
+      sharedModules = lib.attrValues componentModules ++ [ ./modules/edition.nix ./modules/no-gui.nix ./modules/firmware-wifi.nix ./modules/base.nix ./modules/sound.nix ./modules/branding.nix ];
       # What an installed machine's host flake gets as its tetron-nixos copy.
       source = lib.fileset.toSource {
         root = ./.;
@@ -102,13 +113,18 @@
         inherit system;
         modules = modules ++ [ disko.nixosModules.disko (import ./lib/host.nix install) ] ++ lib.optional (hardware != null) hardware;
       };
-      nixosModules = { tetron = ./modules/tetron.nix; console = ./modules/console.nix; no-gui = ./modules/no-gui.nix; firmware-wifi = ./modules/firmware-wifi.nix; base = ./modules/base.nix; sound = ./modules/sound.nix; branding = ./modules/branding.nix; };
+      # Components alone (services.tetron, programs.tetron-tui, programs.tetron-wm,
+      # services.tetron-console), or the whole edition as default.
+      nixosModules = componentModules // {
+        default = { imports = modules; };
+      };
 
       # Suite packages on stock nixpkgs, for every Linux platform; the edition
       # images on x86_64 only.
       packages = lib.genAttrs systems (sys:
         let p = suitePkgs sys; in {
-          inherit (p) tetron tetron-wm tetron-tui tetronos-ssh-temp kmscon;
+          inherit (p) tetron tetron-wm tetron-tui casttui tetronos-ssh-temp;
+          kmscon = p.kmscon-tetron;
         } // lib.optionalAttrs (sys == system) {
           inherit (pkgs) tetron-nixos-install;
           iso = self.nixosConfigurations.iso.config.system.build.isoImage;
@@ -127,6 +143,9 @@
 
       checks.${system} = {
         mesh = import ./tests/mesh.nix { inherit pkgs; modules = sharedModules; };
+        # Components alone, on stock nixpkgs.
+        standalone = import ./tests/standalone.nix { pkgs = nixpkgs.legacyPackages.${system}; inherit componentModules; };
+        gui-untouched = import ./tests/gui-untouched.nix { inherit nixpkgs componentModules system; };
       };
     };
 }
