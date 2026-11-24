@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
-    tetron-src = { url = "github:tetronos/tetron/v0.15.6"; flake = false; };
+    tetron-src = { url = "github:tetronos/tetron/v0.15.7"; flake = false; };
     tetron-wm-src = { url = "github:tetronos/tetron-wm/v0.15.23"; flake = false; };
     # Same kmscon as the Debian TetronOS (10.0.4); nixpkgs 26.05 ships 9.3.5,
     # which the touchpad patch does not fit (src/config.c and friends differ).
@@ -30,7 +30,7 @@
       # nixpkgs package, so a desktop NixOS or any distro with Nix can use it
       # and every dependency comes from cache.nixos.org.
       suite = final: prev: {
-        tetron = final.callPackage ./pkgs/tetron.nix { src = tetron-src; version = "0.15.6"; };
+        tetron = final.callPackage ./pkgs/tetron.nix { src = tetron-src; version = "0.15.7"; };
         tetron-wm = final.callPackage ./pkgs/tetron-wm.nix { src = tetron-wm-src; version = "0.15.23"; catalogSrc = tetron-appstore-src; };
         tetron-tui = final.callPackage ./pkgs/tetron-tui.nix { src = tetron-tui-src; version = "0.15.3"; };
         casttui = final.callPackage ./pkgs/casttui.nix { src = casttui-src; version = "0.15.1"; };
