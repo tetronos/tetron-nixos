@@ -40,5 +40,12 @@ ps -eo comm,args | grep -E "^(kmscon|tetron-wm|agetty)" | cut -c1-120
 tetron --version; tetron status 2>&1 | head -5
 id; getent group tetron
 ls -l /run/current-system/sw/bin/tetron-wm /run/current-system/sw/bin/kmscon
-free -m | sed -n 2p; df -h / /nix/store 2>/dev/null | tail -2' > "$out/checks-$mode.txt" 2>&1 || true
+free -m | sed -n 2p; df -h / /nix/store 2>/dev/null | tail -2
+tetron-tui --version 2>&1 | head -1
+ls ~; ls /etc/skel
+grep -hE "^(touchpad-tap|mouse)" $(ps -o args= -C kmscon | grep -o "configdir [^ ]*" | head -1 | cut -d" " -f2)/kmscon.conf
+nix config show experimental-features
+systemctl --user is-active pipewire.socket pipewire-pulse.socket wireplumber 2>&1
+command -v wpctl amixer tetronos-ssh-temp; tetronos-ssh-temp status
+systemctl is-enabled sshd 2>&1; sudo sshd -T 2>/dev/null | grep -iE "^(passwordauthentication|include)"; ls -ld /etc/ssh/sshd_config.d' > "$out/checks-$mode.txt" 2>&1 || true
 cat "$out/checks-$mode.txt"

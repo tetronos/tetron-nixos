@@ -9,7 +9,10 @@
   image.baseName = lib.mkForce "tetron-nixos-spike0";
 
   networking.hostName = "tetron-nixos";
-  services.openssh.enable = true;
+  # Spike only: sshd with password login from boot, for vm/boot-iso.sh and remote
+  # checks. The base default is off (tetronos-ssh-temp turns it on).
+  tetron-nixos.sshAtBoot = true;
+  services.openssh.settings.PasswordAuthentication = true;
 
   # Spike only: Intel wifi for the ThinkPad P1. The policy (module default) is
   # the full Debian tetronos-firmware-wifi set.

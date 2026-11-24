@@ -20,6 +20,7 @@ in {
     term = "xterm-256color";
     extraConfig = ''
       mouse
+      touchpad-tap
       xkb-layout=us
       font-size=14
     '';
