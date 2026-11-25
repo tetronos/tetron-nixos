@@ -138,8 +138,10 @@
 
 <section id="iso"><div class="wrap">
   <p class="eyebrow">Live ISO</p>
-  <h2>Build the live ISO.</h2>
-  <p class="lede">A live system for USB or a VM, about 765 MB: it boots into the tetron-wm desktop. The same image carries the installer, so it can put TetronOS on a disk. Prebuilt ISOs will be attached to releases of this repository.</p>
+  <h2>Download or build the live ISO.</h2>
+  <p class="lede">A live system for USB or a VM, 778 MB: it boots into the tetron-wm desktop, mounts drives without sudo, and carries the installer, so it can put TetronOS on a disk.</p>
+  <a class="btn" href="https://github.com/tetronos/tetron-nixos/releases/download/v0.15.8/tetronos-nixos-0.15.8-x86_64-linux.iso">Download v0.15.8 (778 MB)</a><a class="btn ghost" href="https://github.com/tetronos/tetron-nixos/releases/tag/v0.15.8">Release notes and SHA256</a>
+  <p class="sub">Or build it yourself:</p>
   <pre>nix build github:tetronos/tetron-nixos#iso
 ls result/iso/</pre>
   <p class="sub">amd64, BIOS and UEFI. The live user is <code>tetronos</code> with password <code>tetronos</code>, logged in on tty1. Writing it to a stick and installing to disk: <a href="install.html#iso">install guide</a>.</p>
@@ -180,8 +182,8 @@ ls result/iso/</pre>
   <p class="eyebrow">Status</p>
   <h2>Where it stands.</h2>
   <ul class="limits">
-    <li><b>Done:</b> live ISO that boots on BIOS and UEFI; installer (<code>tetron-nixos-install</code>, reads one <code>install.json</code>, partitions with disko); the five parts as packages and modules; a signed binary cache.</li>
-    <li><b>Next:</b> an installer with a terminal UI, disk encryption and swap options, an offline closure in the ISO, and published ISO releases.</li>
+    <li><b>Done:</b> the live ISO, published (v0.15.8), boots on BIOS and UEFI; installer (<code>tetron-nixos-install</code>, reads one <code>install.json</code>, partitions with disko); the five parts as packages and modules; a signed binary cache.</li>
+    <li><b>Next:</b> an installer with a terminal UI, disk encryption and swap options, and an offline closure in the ISO.</li>
     <li><b>Versions:</b> the suite moves in step on 0.15.x, the same as the Debian flavor.</li>
   </ul>
 </div></section>
