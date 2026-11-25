@@ -6,7 +6,7 @@
   isoImage.makeEfiBootable = true;
   isoImage.makeUsbBootable = true;
   isoImage.squashfsCompression = "zstd -Xcompression-level 19";
-  image.baseName = lib.mkForce "tetronos-nixos-0.15.0-${pkgs.stdenv.hostPlatform.system}";
+  image.baseName = lib.mkForce "tetronos-nixos-0.15.8-${pkgs.stdenv.hostPlatform.system}";
 
   # Boot menu as on the Debian TetronOS ISO: the splash with the menu over
   # its lower half, entries "TetronOS live ...". GRUB (UEFI) uses the live

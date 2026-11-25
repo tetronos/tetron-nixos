@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     tetron-src = { url = "github:tetronos/tetron/v0.15.7"; flake = false; };
-    tetron-wm-src = { url = "github:tetronos/tetron-wm/v0.15.23"; flake = false; };
+    tetron-wm-src = { url = "github:tetronos/tetron-wm/v0.15.25"; flake = false; };
     # Same kmscon as the Debian TetronOS (10.0.4); nixpkgs 26.05 ships 9.3.5,
     # which the touchpad patch does not fit (src/config.c and friends differ).
     kmscon-src = { url = "github:kmscon/kmscon/v10.0.4"; flake = false; };
@@ -12,7 +12,7 @@
     libtsm-src = { url = "github:kmscon/libtsm/v4.8.0"; flake = false; };
     # The tetron-catalog git crate include_str!s ../../../assets/catalog.json, a file
     # outside the crate, so cargo vendoring drops it. Pinned to the rev in the
-    # tetron-wm v0.15.22 Cargo.lock; must move with it.
+    # tetron-wm v0.15.25 Cargo.lock; must move with it.
     tetron-appstore-src = { url = "github:tetronos/tetron-appstore/c7cee998afd6cedf521e928bb6bb19e1dade0640"; flake = false; };
     tetron-tui-src = { url = "github:tetronos/tetron-tui/v0.15.3"; flake = false; };
     casttui-src = { url = "github:tetronos/casttui/v0.15.1"; flake = false; };
@@ -31,7 +31,7 @@
       # and every dependency comes from cache.nixos.org.
       suite = final: prev: {
         tetron = final.callPackage ./pkgs/tetron.nix { src = tetron-src; version = "0.15.7"; };
-        tetron-wm = final.callPackage ./pkgs/tetron-wm.nix { src = tetron-wm-src; version = "0.15.23"; catalogSrc = tetron-appstore-src; };
+        tetron-wm = final.callPackage ./pkgs/tetron-wm.nix { src = tetron-wm-src; version = "0.15.25"; catalogSrc = tetron-appstore-src; };
         tetron-tui = final.callPackage ./pkgs/tetron-tui.nix { src = tetron-tui-src; version = "0.15.3"; };
         casttui = final.callPackage ./pkgs/casttui.nix { src = casttui-src; version = "0.15.1"; };
         tetronos-ssh-temp = final.callPackage ./pkgs/tetronos-ssh-temp.nix { src = tetron-os-src; };
@@ -94,7 +94,7 @@
         tetron-console = import ./modules/tetron-console.nix self;
         casttui = import ./modules/casttui.nix self;
       };
-      sharedModules = lib.attrValues componentModules ++ [ ./modules/edition.nix ./modules/no-gui.nix ./modules/firmware-wifi.nix ./modules/base.nix ./modules/sound.nix ./modules/branding.nix ];
+      sharedModules = lib.attrValues componentModules ++ [ ./modules/edition.nix ./modules/no-gui.nix ./modules/firmware-wifi.nix ./modules/base.nix ./modules/sound.nix ./modules/branding.nix ./modules/storage.nix ];
       # What an installed machine's host flake gets as its tetron-nixos copy.
       source = lib.fileset.toSource {
         root = ./.;
